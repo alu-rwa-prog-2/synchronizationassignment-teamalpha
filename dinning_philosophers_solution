@@ -1,0 +1,165 @@
+//TeamAlpha
+// Team members: Deogratias Amani, Pax Elisee, Mamady Kante the Dining Philosopher
+// Cohort 1
+
+// philosopher is normally thinking
+ 
+// when philosopher gets hungry then
+// he becomes a potential fork/chopstick taker
+ 
+// if philosopher takes fork then he eats
+// and put it down after for other hungry philosophers to take
+ 
+ 
+#include <pthread.h>
+#include <semaphore.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+ 
+ 
+#define THINKING 2
+#define HUNGRY 1
+#define EATING 0
+#define LEFT (philnum + 4) % n
+#define RIGHT (philnum + 1) % n
+ 
+// number of philosophers
+int n;
+ 
+// state of the philosopher
+int *state;
+ 
+// philosophers ID
+int *philID;
+ 
+sem_t sem;
+sem_t *S;
+ 
+void try_eat(int philnum)
+{
+ 
+    // if neighbours are not eating then
+    // process and change philosophers state to eating
+ 
+    if (state[philnum] == HUNGRY && state[LEFT] != EATING && state[RIGHT] != EATING) {
+ 
+ 
+        // state philosopher is eating
+        state[philnum] = EATING;
+ 
+        sleep(2);
+ 
+        printf("Philosopher %d takes fork %d and %d\n",philnum + 1, LEFT + 1, philnum + 1);
+        printf("Philosopher %d is Eating\n", philnum + 1);
+ 
+        // Tell other hungry philosophers to be ready
+        // in put forks down
+        sem_post(&S[philnum]);
+    }
+}
+ 
+// take up eating forks to eat
+void take_fork(int philnum)
+{
+ 
+    sem_wait(&sem);
+ 
+    // state that hungry
+    state[philnum] = HUNGRY;
+ 
+    printf("Philosopher %d is Hungry\n", philnum + 1);
+ 
+    // call try_eat function
+    // and eat if neighbours are not eating
+    try_eat(philnum);
+ 
+    sem_post(&sem);
+ 
+    // since philosopher is set hungry
+    // if unable to eat then wait to be signalled
+    sem_wait(&S[philnum]);
+ 
+    sleep(2);
+}
+ 
+// put down eating forks
+void put_forks_down(int philnum)
+{
+ 
+    sem_wait(&sem);
+ 
+    // putting forks down leaves the phil thinking
+    // state philosopher to thinking
+    state[philnum] = THINKING;
+ 
+    printf("Philosopher %d putting fork %d and %d down\n",philnum + 1, LEFT + 1, philnum + 1);
+    printf("Philosopher %d is thinking\n", philnum + 1);
+ 
+    // give left and right philosophers a chance
+    // to try and eat if they are hungry
+    try_eat(RIGHT);
+    try_eat(LEFT);
+ 
+    sem_post(&sem);
+}
+ 
+ 
+// philosopher function
+// to take fork and put fork down
+ 
+void* philospher(void* philnum)
+{
+ 
+    while (1) {
+ 
+        int* philonum = philnum;
+ 
+        sleep(1);
+ 
+        take_fork(*philonum);
+ 
+        sleep(0);
+ 
+        put_forks_down(*philonum);
+    }
+}
+ 
+int main()
+{
+   
+    // get n philosohers
+    printf("Enter the number of philosophers ");
+    scanf("%d",&n);
+ 
+    // initializing the arrays
+    state = malloc (sizeof *state *n);
+    philID = malloc (sizeof *philID * n);
+    S = malloc( sizeof *S * n );
+ 
+    int i;
+    pthread_t thread_id[n];
+ 
+    // initialize the semaphores
+    sem_init(&sem, 0, 1);
+ 
+    for (i = 0; i < n; i++){
+ 
+        sem_init(&S[i], 0, 0);
+ 
+        philID[i]= i; // and initialize the philosophers with an id value
+    }
+ 
+    for (i = 0; i < n; i++) {
+ 
+        // create philosopher processes
+        pthread_create(&thread_id[i], NULL, philospher, &philID[i]);
+ 
+        printf("Philosopher %d is thinking\n", i + 1);
+    }
+ 
+    for (i = 0; i < n; i++)
+ 
+        pthread_join(thread_id[i], NULL);
+}
+RAW Paste Data
