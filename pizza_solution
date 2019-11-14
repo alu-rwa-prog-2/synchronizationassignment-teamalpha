@@ -1,0 +1,93 @@
+// TeamAlpha
+// Members: Pax, Deo, Kante
+// Pizza question
+//Cohort 1
+
+#include <stdio.h>
+#include<string.h> 
+#include<pthread.h> 
+#include<stdlib.h> 
+#include<unistd.h> 
+
+int max_num = 5;
+int pizza = 0;
+pthread_mutex_t lock; 
+
+
+void* cookNow() 
+{ 
+    pthread_mutex_lock(&lock); 
+
+      if (pizza<max_num){
+      pizza += 1; 
+      printf("\n Added Pizza, now total is : %d\n", pizza);
+        if (pizza==max_num){
+            printf("\n Tray full, chef can't cook more\n");  
+        }
+    }
+    else{
+      printf("\n Tray is full, you can't produce more pizza. The Chef is going to sleep\n"); 
+    }
+    pthread_mutex_unlock(&lock); 
+
+    return NULL; 
+} 
+
+void* takePizza() 
+{ 
+    pthread_mutex_lock(&lock); 
+  
+   if (pizza<1){
+      printf("\n No pizza for the client now, the chef has to produce first\n");
+   }
+   else{
+        pizza -=1;
+        printf("\n Client ate 1 pizza, remaining %d pizza(s)\n", pizza);
+            if(pizza == 0 ){
+                printf("\n No pizza for the client\n");
+            }
+   }
+    pthread_mutex_unlock(&lock);
+
+     
+  
+    return NULL; 
+} 
+int main(void) {
+
+  pthread_t tHid[2]; 
+  int i = 0;
+  int counter = 0;
+  printf("Starter stock: %d\n", pizza);
+  int choice, starter_action;
+  printf("What's the max number of pizza on the tray\n");
+  scanf("\n%d", &choice);
+  printf("Press: \n 1 to produce \n 2 to consume \n Anything else to Exit\n");
+  scanf("\n%d", &starter_action);
+  
+
+  // Upgrade and include 
+  while (counter < 4){
+    
+    if (starter_action == 1){
+      cook: 
+      pthread_create(&(tHid[0]), NULL, &cookNow, NULL);
+      pthread_create(&(tHid[1]), NULL, &takePizza, NULL);
+    } 
+    else if (starter_action == 2){
+      pthread_create(&(tHid[1]), NULL, &takePizza, NULL);
+      pthread_create(&(tHid[0]), NULL, &cookNow, NULL);
+    }
+    else {
+      exit(0);
+    }
+ 
+    
+
+  counter ++;
+  }
+  pthread_join(tHid[0], NULL); 
+  pthread_join(tHid[1], NULL); 
+  printf("\n\n****************The End*******************");
+  return 0;
+}
